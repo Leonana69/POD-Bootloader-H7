@@ -23,6 +23,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include <string.h>
 #include "debug.h"
 #include "boot.h"
 #include "link.h"
@@ -106,17 +107,24 @@ int main(void)
   MX_USART6_UART_Init();
   MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
+  PodtpPacket rxPacketBuffer;
   PodtpPacket packet;
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_1, GPIO_PIN_RESET);
+  DEBUG_PRINT("Bootloader started\n");
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    if (linkGetPacket(&packet)) {
-      linkProcessPacket(&packet);
+    if (linkGetPacket(&rxPacketBuffer)) {
+      memcpy(&packet, &rxPacketBuffer, sizeof(PodtpPacket));
+      if (linkProcessPacket(&packet)) {
+        DEBUG_PRINT("send\n");
+        linkSendPacket(&packet);
+      }
     }
+    HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_1);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

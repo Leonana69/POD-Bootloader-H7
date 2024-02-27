@@ -188,7 +188,6 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* uartHandle)
 
 /* USER CODE BEGIN 1 */
 void esp32UartPutChar(uint8_t c) {
-  while (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4) == GPIO_PIN_SET);
   HAL_UART_Transmit(&huart6, &c, 1, 100);
   while (__HAL_UART_GET_FLAG(&huart6, UART_FLAG_TC) == 0);
 }

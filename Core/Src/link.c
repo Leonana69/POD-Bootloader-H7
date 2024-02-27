@@ -43,6 +43,7 @@ bool linkGetPacket(PodtpPacket *packet) {
 
     while (!linkBufferIsEmpty()) {
         uint8_t c = linkBufferGetChar();
+        // DEBUG_PRINT("g %d %d\n", state, c);
         switch (state) {
             case PODTP_STATE_START_1:
                 if (c == PODTP_START_BYTE_1) {
@@ -74,8 +75,8 @@ bool linkGetPacket(PodtpPacket *packet) {
                 state = (c == check_sum[0]) ? PODTP_STATE_CRC_2 : PODTP_STATE_START_1;
                 break;
             case PODTP_STATE_CRC_2:
+                state = PODTP_STATE_START_1;
                 if (c == check_sum[1]) {
-                    state = PODTP_STATE_START_1;
                     return true;
                 }
                 break;
@@ -100,7 +101,7 @@ void linkSendPacket(PodtpPacket *packet) {
 }
 
 bool linkProcessPacket(PodtpPacket *packet) {
-    DEBUG_PRINT("Link process packet: type=%d, port=%d, length=%d\n", packet->type, packet->port, packet->length);
+    DEBUG_PRINT("L:t=%d,p=%d,l=%d\n", packet->type, packet->port, packet->length);
     uint8_t len = packet->length;
 
     if (len <= 1 || packet->type != PODTP_TYPE_BOOT_LOADER) {

@@ -19,6 +19,7 @@ uint8_t linkBufferGetChar();
 bool linkBufferIsEmpty();
 
 bool linkGetPacket(PodtpPacket *packet);
+void linkSendPacket(PodtpPacket *packet);
 bool linkProcessPacket(PodtpPacket *packet);
 
 #endif // __LINK_H__

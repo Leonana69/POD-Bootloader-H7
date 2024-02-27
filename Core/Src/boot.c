@@ -55,6 +55,7 @@ typedef struct {
     uint16_t offset;
 } __attribute__((__packed__)) LoadBuffer;
 
+int count = 0;
 bool bootLoad(PodtpPacket *packet) {
     uint8_t len = packet->length - 1;
     packet->length = 1;
@@ -66,15 +67,16 @@ bool bootLoad(PodtpPacket *packet) {
         packet->type = PODTP_TYPE_ERROR;
         return true;
     }
-
+    // DEBUG_PRINT("Lb [%d]:bp=%d,off=%d,len=%d\n", count, lb->bufferPage, lb->offset, data_size);
     memcpy(boot_buffer + (lb->bufferPage * FIRMWARE_PAGE_SIZE) + lb->offset, packet->data + sizeof(LoadBuffer), data_size);
-    
+    count++;
     packet->type = PODTP_TYPE_ACK;
     return true;
 }
 
 bool bootWrite(PodtpPacket *packet) {
     WriteFlash *wf = (WriteFlash *)packet->data;
+
     packet->length = 1;
     if (wf->bufferPage >= LOCAL_BUFFER_PAGE || wf->flashPage < FIRMWARE_START_PAGE
         || wf->flashPage + wf->numPages > FIRMWARE_END_PAGE) {
@@ -116,6 +118,14 @@ bool bootWrite(PodtpPacket *packet) {
         // Write the data, long per long
         uint32_t flashAddress = FLASH_BASE + (wf->flashPage * FIRMWARE_PAGE_SIZE);
         uint32_t *buffer = (uint32_t *)(boot_buffer + (wf->bufferPage * FIRMWARE_PAGE_SIZE));
+
+        // for (int i = 0; i < 7*1024/16; i++) {
+        //     for (int j = 0; j < 16; j++) {
+        //         DEBUG_PRINT("%02x ", boot_buffer[i*16+j]);
+        //     }
+        //     DEBUG_PRINT("\n");
+        // }
+
         int word_size = sizeof(uint32_t);
         for (int i = 0; i < (wf->numPages * FIRMWARE_PAGE_SIZE) / word_size; i++, flashAddress += word_size) {
             if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, flashAddress, buffer[i]) != HAL_OK) {
