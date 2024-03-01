@@ -1,6 +1,6 @@
 OPENOCD				?= openocd
 OPENOCD_INTERFACE	?= interface/stlink.cfg
-OPENOCD_TARGET    	?= target/stm32f4x.cfg
+OPENOCD_TARGET    	?= target/stm32h7x.cfg
 OPENOCD_CMDS		?=
 LOAD_ADDRESS		?= 0x8004000
 PROG				?= $(BUILD_DIR)/$(TARGET)

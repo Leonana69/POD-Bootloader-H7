@@ -29,17 +29,13 @@ bool startFirmware() {
 
 static const uint32_t sector_offset[] = {
     [0]  = 0x00000000,
-    [1]  = 0x00004000,
-    [2]  = 0x00008000,
-    [3]  = 0x0000C000,
-    [4]  = 0x00010000,
-    [5]  = 0x00020000,
-    [6]  = 0x00040000,
-    [7]  = 0x00060000,
-    [8]  = 0x00080000,
-    [9]  = 0x000A0000,
-    [10] = 0x000C0000,
-    [11] = 0x000E0000,
+    [1]  = 0x00020000,
+    [2]  = 0x00040000,
+    [3]  = 0x00060000,
+    [4]  = 0x00080000,
+    [5]  = 0x000A0000,
+    [6]  = 0x000C0000,
+    [7]  = 0x000E0000,
 };
 
 uint8_t boot_buffer[LOCAL_BUFFER_PAGE * FIRMWARE_PAGE_SIZE];
@@ -63,7 +59,7 @@ bool bootLoad(PodtpPacket *packet) {
     uint8_t data_size = len - sizeof(LoadBuffer);
     if (lb->bufferPage >= LOCAL_BUFFER_PAGE || lb->offset >= FIRMWARE_PAGE_SIZE
         || lb->bufferPage * FIRMWARE_PAGE_SIZE + lb->offset + data_size
-            >= LOCAL_BUFFER_PAGE * FIRMWARE_PAGE_SIZE) {
+            > LOCAL_BUFFER_PAGE * FIRMWARE_PAGE_SIZE) {
         packet->type = PODTP_TYPE_ERROR;
         return true;
     }
@@ -86,11 +82,12 @@ bool bootWrite(PodtpPacket *packet) {
 
     HAL_FLASH_Unlock();
     __HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_EOP | FLASH_FLAG_OPERR |FLASH_FLAG_WRPERR |
-            FLASH_FLAG_PGAERR | FLASH_FLAG_PGPERR | FLASH_FLAG_PGSERR);
+            FLASH_FLAG_PGSERR | FLASH_FLAG_ALL_BANK1);
     __disable_irq();
 
     // Erase the page(s) by sector
     bool error = false;
+    // this would take a long time, around 1 second for each sector
     for (uint16_t i = 0; i < wf->numPages; i++) {
         for (int j = 0; j < 12; j++) {
             if (((uint32_t)(wf->flashPage + i)) * FIRMWARE_PAGE_SIZE == sector_offset[j]) {
@@ -99,6 +96,7 @@ bool bootWrite(PodtpPacket *packet) {
                 EraseInitStruct.VoltageRange = FLASH_VOLTAGE_RANGE_3;
                 EraseInitStruct.NbSectors = 1;
                 EraseInitStruct.Sector = j;
+                EraseInitStruct.Banks = FLASH_BANK_1; // for H7, this is essential
                 uint32_t SectorError = 0;
                 // SPL: 
                 // FLASH_EraseSector(j << 3, VoltageRange_3);
@@ -117,19 +115,13 @@ bool bootWrite(PodtpPacket *packet) {
     if (!error) {
         // Write the data, long per long
         uint32_t flashAddress = FLASH_BASE + (wf->flashPage * FIRMWARE_PAGE_SIZE);
-        uint32_t *buffer = (uint32_t *)(boot_buffer + (wf->bufferPage * FIRMWARE_PAGE_SIZE));
+        uint8_t *buffer = boot_buffer + (wf->bufferPage * FIRMWARE_PAGE_SIZE);
 
-        // for (int i = 0; i < 7*1024/16; i++) {
-        //     for (int j = 0; j < 16; j++) {
-        //         DEBUG_PRINT("%02x ", boot_buffer[i*16+j]);
-        //     }
-        //     DEBUG_PRINT("\n");
-        // }
-
-        int word_size = sizeof(uint32_t);
-        for (int i = 0; i < (wf->numPages * FIRMWARE_PAGE_SIZE) / word_size; i++, flashAddress += word_size) {
-            if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, flashAddress, buffer[i]) != HAL_OK) {
+        int addr_inc = 256 / 8; // HAL_FLASH_Program for H7 writes 256 bits at a time
+        for (int i = 0; i < wf->numPages * FIRMWARE_PAGE_SIZE; i += addr_inc, flashAddress += addr_inc) {
+            if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_FLASHWORD, flashAddress, (uint32_t) (buffer + i)) != HAL_OK) {
                 error = true;
+                DEBUG_PRINT("ERROR 0x%lx\n", HAL_FLASH_GetError());
                 break;
             }
         }
@@ -137,6 +129,9 @@ bool bootWrite(PodtpPacket *packet) {
     
     HAL_FLASH_Lock();
     __enable_irq();
+
+    // enable UART5 RXNE interrupt, otherwise the bootloader will not receive the next packet
+    __HAL_UART_ENABLE_IT(&huart5, UART_IT_RXNE);
 
     packet->type = error ? PODTP_TYPE_ERROR : PODTP_TYPE_ACK;
     return true;
