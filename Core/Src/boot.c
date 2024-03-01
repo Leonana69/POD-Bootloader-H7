@@ -63,7 +63,7 @@ bool bootLoad(PodtpPacket *packet) {
         packet->type = PODTP_TYPE_ERROR;
         return true;
     }
-    // DEBUG_PRINT("Lb [%d]:bp=%d,off=%d,len=%d\n", count, lb->bufferPage, lb->offset, data_size);
+    
     memcpy(boot_buffer + (lb->bufferPage * FIRMWARE_PAGE_SIZE) + lb->offset, packet->data + sizeof(LoadBuffer), data_size);
     count++;
     packet->type = PODTP_TYPE_ACK;
