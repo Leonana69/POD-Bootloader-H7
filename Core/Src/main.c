@@ -109,7 +109,6 @@ int main(void)
   /* USER CODE BEGIN 2 */
   PodtpPacket rxPacketBuffer;
   PodtpPacket packet;
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_0, GPIO_PIN_RESET);
   DEBUG_PRINT("Bootloader started\n");
   /* USER CODE END 2 */
 
@@ -123,7 +122,6 @@ int main(void)
         linkSendPacket(&packet);
       }
     }
-    HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_0);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

@@ -44,8 +44,7 @@ void MX_UART4_Init(void);
 void MX_UART5_Init(void);
 
 /* USER CODE BEGIN Prototypes */
-void esp32UartPutChar(uint8_t c);
-void debugUartPutChar(int c);
+
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

@@ -1,32 +1,35 @@
 #include <string.h>
 #include "boot.h"
 #include "gpio.h"
+#include "config.h"
 
 #define DEBUG
 #include "debug.h"
 
 void bootPinInit() {
-    // A4 is the boot pin
     GPIO_InitTypeDef GPIO_InitStruct = { 0 };
+    // Change this if the boot pin is not GPIOA
 	__HAL_RCC_GPIOA_CLK_ENABLE();
-	GPIO_InitStruct.Pin = GPIO_PIN_4;
+	GPIO_InitStruct.Pin = BOOT_CTRL_PIN;
 	GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
 	GPIO_InitStruct.Pull = GPIO_PULLDOWN;
 	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-	HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+	HAL_GPIO_Init(BOOT_CTRL_PORT, &GPIO_InitStruct);
 }
 
 bool bootPinDeInit() {
-    HAL_GPIO_DeInit(GPIOA, GPIO_PIN_4);
+    HAL_GPIO_DeInit(BOOT_CTRL_PORT, BOOT_CTRL_PIN);
+    // Change this if the boot pin is not GPIOA
     __HAL_RCC_GPIOA_CLK_DISABLE();
     return true;
 }
 
 bool startFirmware() {
     // If the boot pin is low, start the firmware
-    return HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4) == GPIO_PIN_RESET;
+    return HAL_GPIO_ReadPin(BOOT_CTRL_PORT, BOOT_CTRL_PIN) == GPIO_PIN_RESET;
 }
 
+// Update this if the target is not H7
 static const uint32_t sector_offset[] = {
     [0]  = 0x00000000,
     [1]  = 0x00020000,

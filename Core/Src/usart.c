@@ -236,12 +236,5 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* uartHandle)
 }
 
 /* USER CODE BEGIN 1 */
-void esp32UartPutChar(uint8_t c) {
-  HAL_UART_Transmit(&huart5, &c, 1, 100);
-  while (__HAL_UART_GET_FLAG(&huart5, UART_FLAG_TC) == 0);
-}
 
-void debugUartPutChar(int c) {
-  HAL_UART_Transmit(&huart4, (uint8_t *) &c, 1, 100);
-}
 /* USER CODE END 1 */

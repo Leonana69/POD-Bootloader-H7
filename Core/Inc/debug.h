@@ -1,7 +1,7 @@
 #ifndef __DEBUG_H__
 #define __DEBUG_H__
 
-#include "usart.h"
+#include "_usart.h"
 #include "eprintf.h"
 
 #ifndef DEBUG_FMT

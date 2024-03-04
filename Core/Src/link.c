@@ -100,17 +100,21 @@ void linkSendPacket(PodtpPacket *packet) {
 }
 
 bool linkProcessPacket(PodtpPacket *packet) {
+    LINK_LED_ON();
     uint8_t len = packet->length;
 
     if (len <= 1 || packet->type != PODTP_TYPE_BOOT_LOADER) {
+        LINK_LED_OFF();
         return false;
     }
 
+    bool result = false;
     // Bootloader command, currently only support write flash
     if (packet->port == PORT_LOAD_BUFFER) {
-        return bootLoad(packet);
+        result = bootLoad(packet);
     } else if (packet->port == PORT_WRITE_FLASH) {
-        return bootWrite(packet);
+        result = bootWrite(packet);
     }
-    return false;
+    LINK_LED_OFF();
+    return result;
 }
