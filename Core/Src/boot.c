@@ -63,7 +63,8 @@ bool bootLoad(PodtpPacket *packet) {
     if (lb->bufferPage >= LOCAL_BUFFER_PAGE || lb->offset >= FIRMWARE_PAGE_SIZE
         || lb->bufferPage * FIRMWARE_PAGE_SIZE + lb->offset + data_size
             > LOCAL_BUFFER_PAGE * FIRMWARE_PAGE_SIZE) {
-        packet->type = PODTP_TYPE_ERROR;
+        packet->type = PODTP_TYPE_ACK;
+        packet->port = PODTP_PORT_ERROR;
         return true;
     }
     
@@ -79,7 +80,8 @@ bool bootWrite(PodtpPacket *packet) {
     packet->length = 1;
     if (wf->bufferPage >= LOCAL_BUFFER_PAGE || wf->flashPage < FIRMWARE_START_PAGE
         || wf->flashPage + wf->numPages > FIRMWARE_END_PAGE) {
-        packet->type = PODTP_TYPE_ERROR;
+        packet->type = PODTP_TYPE_ACK;
+        packet->port = PODTP_PORT_ERROR;
         return true;
     }
 
@@ -136,6 +138,7 @@ bool bootWrite(PodtpPacket *packet) {
     // enable UART5 RXNE interrupt, otherwise the bootloader will not receive the next packet
     __HAL_UART_ENABLE_IT(&huart5, UART_IT_RXNE);
 
-    packet->type = error ? PODTP_TYPE_ERROR : PODTP_TYPE_ACK;
+    packet->type = PODTP_TYPE_ACK;
+    packet->port = error ? PODTP_PORT_ERROR : PODTP_PORT_OK;
     return true;
 }
